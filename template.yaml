@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Sales Sync API
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    Environment:
+        Variables:
+          TABLE_NAME: !Ref TABLE_NAME
+          COGNITO_URL: !Ref COGNITO_URL
+          CLIENT_ID: !Ref CLIENT_ID
+          CLIENT_SECRET: !Ref CLIENT_SECRET
+          COGNITO_CALLBACK_URL: !Ref COGNITO_CALLBACK_URL
+
+Resources:
+  SalesSyncApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'X-Forwarded-For'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+        AllowCredentials: true
+  AuthFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: auth/
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      Events:
+        ApiRouter:
+          Type: Api
+          Properties:
+            Path: /auth/{proxy+}   # 👈 this enables wildcard routing
+            Method: ANY
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  SalesSyncApi:
+    Description: "Sales Sync API API-Gateway ARN"
+    Value: !GetAtt SalesSyncApi.Arn
+  SalesSyncFunction:
+    Description: "Sales Sync API Lambda Function ARN"
+    Value: !GetAtt SalesSyncFunction.Arn
+  SalesSyncFunctionIamRole:
+    Description: "Implicit IAM Role created for Sales Sync API"
+    Value: !GetAtt SalesSyncFunctionRole.Arn

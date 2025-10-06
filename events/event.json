@@ -1,0 +1,11 @@
+{
+  "resource": "/api/{proxy+}",
+  "path": "/api/ping",
+  "httpMethod": "GET",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": null,
+  "body": null,
+  "isBase64Encoded": false
+}
