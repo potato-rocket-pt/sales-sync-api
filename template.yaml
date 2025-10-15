@@ -6,7 +6,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 10
     Environment:
         Variables:
           TABLE_NAME: !Ref TABLE_NAME
@@ -20,12 +20,6 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-      Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'X-Forwarded-For'"
-        AllowOrigin: "'*'"
-        MaxAge: "'600'"
-        AllowCredentials: true
   AuthFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -38,7 +32,46 @@ Resources:
         ApiRouter:
           Type: Api
           Properties:
+            RestApiId: !Ref SalesSyncApi
             Path: /auth/{proxy+}   # 👈 this enables wildcard routing
+            Method: ANY
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts
+  WorkspaceFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: workspace/
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      Events:
+        ApiRouter:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesSyncApi
+            Path: /workspace/{proxy+}   # 👈 this enables wildcard routing
+            Method: ANY
+  WorkspaceDefaultFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: workspace/
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      Events:
+        ApiRouter:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesSyncApi
+            Path: /workspace
             Method: ANY
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
@@ -56,9 +89,9 @@ Outputs:
   SalesSyncApi:
     Description: "Sales Sync API API-Gateway ARN"
     Value: !GetAtt SalesSyncApi.Arn
-  SalesSyncFunction:
-    Description: "Sales Sync API Lambda Function ARN"
-    Value: !GetAtt SalesSyncFunction.Arn
-  SalesSyncFunctionIamRole:
-    Description: "Implicit IAM Role created for Sales Sync API"
-    Value: !GetAtt SalesSyncFunctionRole.Arn
+  AuthFunction:
+    Description: "Sales Sync Auth API Lambda Function ARN"
+    Value: !GetAtt AuthFunction.Arn
+  WorkspaceFunction:
+    Description: "Sales Sync Workspace API Lambda Function ARN"
+    Value: !GetAtt WorkspaceFunction.Arn

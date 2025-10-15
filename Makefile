@@ -14,8 +14,7 @@ build:
 	sam build
 
 start: build ## Start Lambda and API Gateway on localhost
-	export TABLE_NAME=banana
-	sam local start-api --port 8080 --env-vars env.staging.json --warm-containers EAGER
+	sam local start-api --port 8080 --env-vars env.staging.json
 
 deploy: build
 	sam deploy --env-vars env.prod.json

@@ -1,12 +1,17 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Router, withCORS } from '@devyethiha/samjs';
-import LoginController from './login/login.controller';
-import { AuthService } from './services/auth.service';
+import DefaultController from './default/default.controller';
+import { WorkspaceService } from './services/workspace.service';
 
 async function main(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     const region = 'ap-southeast-2';
     try {
-        const router = new Router(event, region, [{ controller: LoginController, services: [AuthService] }], '/auth');
+        const router = new Router(
+            event,
+            region,
+            [{ controller: DefaultController, services: [WorkspaceService] }],
+            '/workspace',
+        );
 
         return router.handle();
     } catch (err) {
