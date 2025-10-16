@@ -14,7 +14,8 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.893.0",
     "@aws-sdk/lib-dynamodb": "^3.893.0",
-    "@devyethiha/samjs": "^0.1.9",
+    "@devyethiha/samjs": "^0.1.10",
+    "@sales-sync/shared": "file:vendor/shared.tgz",
     "esbuild": "^0.14.14",
     "openid-client": "^5.7.1"
   },

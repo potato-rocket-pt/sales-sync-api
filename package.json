@@ -1,0 +1,33 @@
+{
+  "name": "sales-sync-api",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "workspaces": [
+    "auth",
+    "workspace",
+    "packages"
+  ],
+  "scripts": {
+    "build:package": "npm run -w packages build",
+    "build": "npm run -w packages build && npm run -w auth compile && npm run -w workspace compile",
+    "lint": "npm run -w auth lint && npm run -w workspace lint",
+    "test": "npm run -w auth test && npm run -w workspace test",
+    "clean": "rimraf node_modules auth/node_modules workspace/node_modules packages/node_modules .aws-sam"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/potato-rocket-pt/sales-sync-api.git"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.6.3"
+  },
+  "keywords": [],
+  "author": "Ye Thiha",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/potato-rocket-pt/sales-sync-api/issues"
+  },
+  "homepage": "https://github.com/potato-rocket-pt/sales-sync-api#readme"
+}

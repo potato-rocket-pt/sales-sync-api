@@ -1,5 +1,5 @@
 {
-  "name": "sales-sync-api-auth",
+  "name": "sales-sync-api-workspace",
   "version": "1.0.0",
   "description": "Sales Sync api for auth",
   "main": "app.js",
@@ -14,7 +14,8 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.893.0",
     "@aws-sdk/lib-dynamodb": "^3.893.0",
-    "@devyethiha/samjs": "^0.1.9",
+    "@devyethiha/samjs": "^0.1.10",
+    "@sales-sync/shared": "file:vendor/shared.tgz",
     "esbuild": "^0.14.14",
     "jwt-decode": "^4.0.0",
     "uuid": "^13.0.0"
