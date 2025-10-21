@@ -1,4 +1,4 @@
-.PHONY: help clean shared.pack bundle build start deploy
+.PHONY: help clean shared.pack bundle build start deploy dev deps
 
 # Default target
 .DEFAULT_GOAL := help
@@ -7,6 +7,57 @@
 SHARED_PKG_DIR := packages
 AUTH_VENDOR    := auth/vendor
 WS_VENDOR      := workspace/vendor
+CRM_VENDOR     := crm/vendor
+
+# === Dev mode ===
+dev:
+	@echo "==> Starting development mode with nodemon"
+	npx nodemon -e ts,js,yml,yaml,json \
+	  -w auth \
+	  -w workspace \
+	  -w crm \
+	  -w packages/src \
+	  -w template.yaml \
+	  -i auth/bundle \
+	  -i workspace/bundle \
+	  -i crm/bundle \
+	  -i .aws-sam \
+	  -i node_modules \
+	  -i 'auth/vendor' \
+	  -i 'workspace/vendor' \
+	  -i 'crm/vendor' \
+	  --delay 700ms \
+	  -x "make start"
+
+# === Reinstall deps after shared.tgz update (so file:vendor/shared.tgz is picked up)
+
+pkg: deps.auth deps.workspace deps.crm
+	@echo "==> Reinstalled @sales-sync/shared in all workspaces"
+
+define REINSTALL_SHARED
+	@echo "==> Reinstalling @sales-sync/shared in $(1)"
+	@cd $(1) && \
+	  npm uninstall @sales-sync/shared >/dev/null 2>&1 || true && \
+	  rm -rf node_modules/@sales-sync/shared && \
+	  npm install @sales-sync/shared@file:vendor/shared.tgz --prefer-offline --no-audit --no-fund --silent && \
+	  echo "   ✓ $(1) done"
+endef
+
+deps.auth:
+	$(call REINSTALL_SHARED,auth)
+
+deps.workspace:
+	$(call REINSTALL_SHARED,workspace)
+
+deps.crm:
+	$(call REINSTALL_SHARED,crm)
+
+
+deps:
+	@echo "==> Reinstalling workspace deps to pick up updated shared.tgz"
+	npm install -w ./auth --prefer-offline --no-audit --no-fund
+	npm install -w ./workspace --prefer-offline --no-audit --no-fund
+	npm install -w ./crm --prefer-offline --no-audit --no-fund
 
 # === Shared package tarball creation ===
 shared.pack:
@@ -15,11 +66,13 @@ shared.pack:
 	@cd "$(SHARED_PKG_DIR)" && npm run build
 	@cd "$(SHARED_PKG_DIR)" && TARBALL=$$(npm pack --json | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d)[0].filename))"); \
 		echo "==> Tarball: $$TARBALL"; \
-		mkdir -p "$(AUTH_VENDOR)" "$(WS_VENDOR)"; \
+		mkdir -p "../$(AUTH_VENDOR)" "../$(WS_VENDOR)" "../$(CRM_VENDOR)"; \
 		cp "$$TARBALL" "../$(AUTH_VENDOR)/shared.tgz"; \
 		cp "$$TARBALL" "../$(WS_VENDOR)/shared.tgz"; \
+		cp "$$TARBALL" "../$(CRM_VENDOR)/shared.tgz"; \
 		rm -f "$$TARBALL"
-	@echo "==> Updated vendor tarballs: $(AUTH_VENDOR)/shared.tgz and $(WS_VENDOR)/shared.tgz"
+	@echo "==> Updated vendor tarballs: $(AUTH_VENDOR)/shared.tgz, $(CRM_VENDOR)/shared.tgz, $(WS_VENDOR)/shared.tgz"
+	@$(MAKE) deps
 
 # === Bundle each Lambda with esbuild ===
 bundle: shared.pack
@@ -27,6 +80,8 @@ bundle: shared.pack
 	npm run -w ./auth bundle
 	@echo "==> Bundling workspace Lambda"
 	npm run -w ./workspace bundle
+	@echo "==> Bundling crm Lambda"
+	npm run -w ./crm bundle
 	@echo "==> Bundling completed"
 
 # === SAM build & deploy commands ===
@@ -40,21 +95,26 @@ start: build
 
 deploy: build
 	@echo "==> Deploying to AWS"
-	sam deploy --env-vars env.prod.json
+	sam deploy \
+	  --stack-name sales-sync-api \
+	  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+	  --resolve-s3 \
 
 # === Cleanup ===
 clean:
 	@echo "==> Cleaning build artifacts"
-	rm -rf .aws-sam auth/bundle workspace/bundle
+	rm -rf .aws-sam auth/bundle workspace/bundle crm/bundle
 
 # === Help ===
 help:
 	@echo ""
 	@echo "Sales Sync API Commands:"
-	@echo "  make shared.pack   - Build and pack shared module tarballs"
-	@echo "  make bundle        - Bundle auth and workspace Lambdas with esbuild"
+	@echo "  make dev           - Run dev mode with nodemon auto-rebuild"
+	@echo "  make shared.pack   - Build & pack shared module tarballs (and reinstall workspaces)"
+	@echo "  make bundle        - Bundle auth/workspace/crm Lambdas with esbuild"
 	@echo "  make build         - Bundle + SAM build (no rebuild inside SAM)"
 	@echo "  make start         - Run local API after build"
 	@echo "  make deploy        - Deploy after bundle build"
 	@echo "  make clean         - Remove .aws-sam and bundle folders"
 	@echo ""
+

@@ -1,3 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Sales Sync API
+
+Parameters:
+  TableName:
+    Type: String
+  CognitoUrl:
+    Type: String
+  ClientId:
+    Type: String
+  ClientSecret:
+    Type: String
+  CognitoCallbackUrl:
+    Type: String
+
+Globals:
+  Function:
+    Timeout: 10
+    Environment:
+      Variables:
+        TABLE_NAME:            !Ref TableName
+        COGNITO_URL:           !Ref CognitoUrl
+        CLIENT_ID:             !Ref ClientId
+        CLIENT_SECRET:         !Ref ClientSecret
+        COGNITO_CALLBACK_URL:  !Ref CognitoCallbackUrl
+
 Resources:
   SalesSyncApi:
     Type: AWS::Serverless::Api
@@ -7,10 +35,13 @@ Resources:
   AuthFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: auth/bundle           # <— pre-bundled output folder
-      Handler: app.lambdaHandler     # <— bundle/app.js exports lambdaHandler
+      CodeUri: auth/bundle
+      Handler: app.lambdaHandler
       Runtime: nodejs22.x
       Architectures: [ x86_64 ]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
       Events:
         ApiRouter:
           Type: Api
@@ -22,10 +53,13 @@ Resources:
   WorkspaceFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: workspace/bundle      # <— pre-bundled output folder
+      CodeUri: workspace/bundle
       Handler: app.lambdaHandler
       Runtime: nodejs22.x
       Architectures: [ x86_64 ]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
       Events:
         ApiRouter:
           Type: Api
@@ -33,14 +67,17 @@ Resources:
             RestApiId: !Ref SalesSyncApi
             Path: /workspace/{proxy+}
             Method: ANY
-
+          
   WorkspaceDefaultFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: workspace/bundle      # <— pre-bundled output folder
+      CodeUri: workspace/bundle
       Handler: app.lambdaHandler
       Runtime: nodejs22.x
       Architectures: [ x86_64 ]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
       Events:
         ApiRouter:
           Type: Api
@@ -48,3 +85,65 @@ Resources:
             RestApiId: !Ref SalesSyncApi
             Path: /workspace
             Method: ANY
+            
+  CRMFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: crm/bundle
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures: [ x86_64 ]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      Events:
+        ApiRouter:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesSyncApi
+            Path: /crm/{proxy+}
+            Method: ANY
+          
+  CRMDefaultFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: crm/bundle
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures: [ x86_64 ]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      Events:
+        ApiRouter:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesSyncApi
+            Path: /crm
+            Method: ANY
+            
+  
+Outputs:
+  SalesSyncApiId:
+    Description: "API Gateway RestApi ID"
+    Value: !Ref SalesSyncApi
+
+  SalesSyncApiRootResourceId:
+    Description: "API Gateway Root Resource ID"
+    Value: !GetAtt SalesSyncApi.RootResourceId
+
+  SalesSyncApiInvokeUrl:
+    Description: "Invoke URL for the Prod stage"
+    Value: !Sub "https://${SalesSyncApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  AuthFunctionArn:
+    Description: "Sales Sync Auth API Lambda Function ARN"
+    Value: !GetAtt AuthFunction.Arn
+
+  WorkspaceFunctionArn:
+    Description: "Sales Sync Workspace API Lambda Function ARN"
+    Value: !GetAtt WorkspaceFunction.Arn
+
+  CRMFunctionArn:
+    Description: "Sales Sync CRM API Lambda Function ARN"
+    Value: !GetAtt CRMFunction.Arn

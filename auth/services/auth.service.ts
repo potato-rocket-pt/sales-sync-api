@@ -45,7 +45,7 @@ export class AuthService extends Service implements IAuthService {
             data: JSON.stringify(param),
         };
         const command = new PutCommand({
-            TableName: 'sales-sync-db',
+            TableName: 'sales-sync-auth',
             Item,
         });
         const config = {
@@ -74,7 +74,7 @@ export class AuthService extends Service implements IAuthService {
     public async getNonce(state: string): Promise<NoncePair | null> {
         try {
             const command = new GetCommand({
-                TableName: 'sales-sync-db',
+                TableName: 'sales-sync-auth',
                 Key: {
                     pk: 'NONCE-STATE#' + state,
                     sk: state,

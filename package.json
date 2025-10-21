@@ -6,6 +6,7 @@
   "workspaces": [
     "auth",
     "workspace",
+    "crm",
     "packages"
   ],
   "scripts": {
@@ -13,7 +14,7 @@
     "build": "npm run -w packages build && npm run -w auth compile && npm run -w workspace compile",
     "lint": "npm run -w auth lint && npm run -w workspace lint",
     "test": "npm run -w auth test && npm run -w workspace test",
-    "dev": "nodemon -e ts,js,yml,yaml,json -w auth -w workspace -w packages/src -w template.yaml -i auth/bundle -i workspace/bundle -i .aws-sam -i node_modules -i 'auth/vendor' -i 'workspace/vendor' --delay 700ms -x \"make start\"",
+    "dev": "nodemon -e ts,js,yml,yaml,json -w auth -w workspace -w packages/src -w template.yaml -i auth/bundle -i workspace/bundle -i .aws-sam -i node_modules -i 'auth/vendor' -i 'workspace/vendor' --delay 700ms -x \"make dev\"",
     "clean": "rimraf node_modules auth/node_modules workspace/node_modules packages/node_modules .aws-sam"
   },
   "repository": {

@@ -2,8 +2,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Controller, getUser, IControllerMethods, isAuthorize, NO_USER, UNAUTHORIZE_ERROR } from '@devyethiha/samjs';
 import { IWorkspaceService } from '../services/workspace.service';
-import { getWorkspace } from '@sales-sync/shared';
-
 
 class DefaultController extends Controller implements IControllerMethods {
     private workspaceService: IWorkspaceService;

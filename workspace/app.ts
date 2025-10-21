@@ -2,12 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Router, withCORS } from '@devyethiha/samjs';
 import DefaultController from './default/default.controller';
 import { WorkspaceService } from './services/workspace.service';
-import { exampleSharedUtil } from '@sales-sync/shared';
 
 async function main(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     const region = 'ap-southeast-2';
-    const test = exampleSharedUtil("workspace");
-    console.log({test});
     try {
         const router = new Router(
             event,

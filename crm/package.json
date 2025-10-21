@@ -1,7 +1,7 @@
 {
-  "name": "@sales-sync-api/workspace",
+  "name": "@sales-sync-api/crm",
   "version": "1.0.0",
-  "description": "Sales Sync api for auth",
+  "description": "Sales Sync api for crm",
   "main": "app.js",
   "author": "SAM CLI",
   "license": "MIT",
