@@ -3,7 +3,7 @@ import { Controller, IControllerMethods, isAuthorize, UNAUTHORIZE_ERROR } from '
 
 import { IContactService } from './contact.service';
 import { getWorkspace, NO_WORKSPACE } from '@sales-sync/shared';
-import { IAddContactItemDto } from './contact.dto';
+import { IAddContactItemDto, IEditContactItemDto } from './contact.dto';
 
 class ContactController extends Controller implements IControllerMethods {
     private contactService: IContactService;
@@ -13,34 +13,43 @@ class ContactController extends Controller implements IControllerMethods {
         this.contactService = contactService;
     }
 
-    async get(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+    checkWorkspace(event: APIGatewayProxyEvent) {
         if (!isAuthorize(event)) {
-            return UNAUTHORIZE_ERROR;
+            throw UNAUTHORIZE_ERROR;
         }
         const workspace = getWorkspace(event);
         if (!workspace) {
-            return NO_WORKSPACE;
+            throw NO_WORKSPACE;
         }
-        const params: any = event.queryStringParameters || null;
-        if (!params) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ message: 'Missing Param' }),
-            };
-        }
-        const contact_id = params.contact_id;
-        if (!contact_id) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ message: 'Missing contact id' }),
-            };
-        }
+        return workspace;
+    }
 
-        const contact = await this.contactService.getContactItems(contact_id);
-        return {
-            statusCode: 200,
-            body: JSON.stringify([...contact]),
-        };
+    async get(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+        try {
+            this.checkWorkspace(event);
+            const params: any = event.queryStringParameters || null;
+            if (!params) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: 'Missing Param' }),
+                };
+            }
+            const contact_id = params.contact_id;
+            if (!contact_id) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: 'Missing contact id' }),
+                };
+            }
+
+            const contact = await this.contactService.getContactItems(contact_id);
+            return {
+                statusCode: 200,
+                body: JSON.stringify([...contact]),
+            };
+        } catch (error: any) {
+            return { statusCode: 400, ...error };
+        }
     }
 
     /**
@@ -85,6 +94,46 @@ class ContactController extends Controller implements IControllerMethods {
                 ...contact,
             }),
         };
+    }
+
+    async patch(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+        try {
+            const workspace = this.checkWorkspace(event);
+            const bodyStr: any = event.body;
+            if (!bodyStr) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: 'Missing Body Content' }),
+                };
+            }
+            const body = JSON.parse(bodyStr);
+            // Refractor: need to validate data with actural dto created with zod
+            const data: IEditContactItemDto = {
+                workspace_uuid: workspace.uuid,
+                ...body,
+            };
+            const contact_id = data?.contact_id;
+            const id = data?.id;
+            if (!contact_id) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: 'Missing contact_id' }),
+                };
+            }
+            if (!id) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: 'Missing id' }),
+                };
+            }
+            const updated_data = await this.contactService.editContactItem(data);
+            return {
+                statusCode: 200,
+                body: JSON.stringify(updated_data),
+            };
+        } catch (error: any) {
+            return { statusCode: 400, ...error };
+        }
     }
 }
 

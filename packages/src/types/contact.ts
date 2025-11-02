@@ -2,13 +2,15 @@ export type IContact = {
   workspace_uuid: string;
   id: string;
   name: string;
+  mode: "b2b" | "b2c"
 };
 
 export type IContactBase = {
   id: string; // uuid
   contact_id: string; // which contact item is store at
   status: string;
-  add_date: string; // ISO string
+  added_date: string; // ISO string
+  updated_date: string; // ISO string
   note: string;
 };
 
