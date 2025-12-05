@@ -31,14 +31,10 @@ async function main(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
             '/crm',
         );
 
-        return router.handle();
-    } catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: 'some error happened',
-            }),
-        };
+        return await router.handle();
+    } catch (error: any) {
+        const statusCode = error?.statusstatusCode;
+        return { statusCode: statusCode ? statusCode : 500, body: JSON.stringify(error) };
     }
 }
 

@@ -32,7 +32,7 @@ export type IB2CContact = {
   email: string;
   phone: string;
   business: {
-    business_sname: string;
+    business_name: string;
     business_email: string;
     business_phone: string;
   }[];
